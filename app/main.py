@@ -8,6 +8,7 @@ app.include_router(documents.router)
 app.include_router(chat.router)
 
 
-@app.get("/")
+@app.get("/check")
 async def root() -> dict[str, str]:
     return {"message": f"{settings.app_name} is running"}
+

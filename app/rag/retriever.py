@@ -5,14 +5,53 @@ from app.rag.vectorstore import VectorStore
 
 
 class Retriever:
-    def __init__(self, vectorstore: VectorStore | None = None) -> None:
+    def __init__(
+            self,
+            embedder:Embedder | None = None,
+            vectorstore:VectorStore | None = None
+    ):
+        self.embedder = embedder or Embedder()
         self.vectorstore = vectorstore or VectorStore()
-        self.embedder = Embedder()
 
-    def retrieve(self, query: str, top_k: int = 3) -> list[dict[str, object]]:
-        query_embedding = self.embedder.embed(query)
-        result = self.vectorstore.collection.query(query_embeddings=[query_embedding], n_results=top_k)
-        return [
-            {"text": text, "metadata": metadata}
-            for text, metadata in zip(result.get("documents", [[]])[0], result.get("metadatas", [[]])[0], strict=False)
-        ]
+    def retrieve(
+            self,
+            query: str,
+            k: int = 5,
+    ) -> list[dict]:
+        """
+        Retrieve top-k similar chunks.
+
+        Returns:
+            [
+                {
+                    "text": "...",
+                    "metadata": {...},
+                    "distance": 0.12
+                },
+                ...
+            ]
+        """
+        query_embedding = self.embedder.embed_query(query)
+        results = self.vectorstore.similarity_search(
+            query_embedding=query_embedding,
+            k=k
+        )
+        documents = results["documents"][0]
+        metadatas = results["metadatas"][0]
+        distances = results["distances"][0]
+
+        retrieved = []
+
+        for doc, meta, distance in zip(
+            documents,
+            metadatas,
+            distances,
+        ):
+            retrieved.append(
+                {
+                    "text":doc,
+                    "metadata":meta,
+                    "distance":distance,
+                }
+            )
+        return retrieved

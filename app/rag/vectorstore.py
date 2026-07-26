@@ -1,26 +1,53 @@
-from __future__ import annotations
-
-import os
+from pathlib import Path
 from typing import Any
 
 import chromadb
-from chromadb.config import Settings as ChromaSettings
-
+from chromadb.api.models.Collection import Collection
 
 class VectorStore:
-    def __init__(self, persist_dir: str | None = None) -> None:
-        self.persist_dir = persist_dir or os.getenv("CHROMA_PERSIST_DIR", "data/chroma_db")
-        self.client = chromadb.PersistentClient(path=self.persist_dir, settings=ChromaSettings(allow_reset=True))
-        self.collection = self.client.get_or_create_collection(name="documents")
-
-    def add_documents(self, documents: list[dict[str, Any]]) -> None:
-        if not documents:
-            return
-        self.collection.add(
-            documents=[doc["text"] for doc in documents],
-            metadatas=[doc.get("metadata", {}) for doc in documents],
-            ids=[doc["id"] for doc in documents],
+    def __init__(
+            self,
+            persist_directory:str = "data/chroma",
+            collection_name:str="personal_kb"
+            ):
+        Path(persist_directory).mkdir(parents=True, exist_ok=True)
+        self.client = chromadb.PersistentClient(path=persist_directory)
+        self.collection:Collection = self.client.get_or_create_collection(
+            name=collection_name
         )
 
-    def query(self, query_text: str, n_results: int = 3) -> Any:
-        return self.collection.query(query_texts=[query_text], n_results=n_results)
+    def add_documents(
+            self,
+            chunks:list[str],
+            embedding:list[list[str]],
+            metadata:list[dict[str,any]] | None = None
+    )->None:
+        if metadata is None:
+            metadata = [{} for _ in chunks]
+        ids = [f"chunks_{i}" for i in range(len(chunks))]
+        self.collection.add(
+            ids = ids,
+            documents=chunks,
+            embeddings=embedding,
+            metadatas=metadata,
+        )
+
+    def similarity_search(
+        self,
+        query_embedding:list[float],
+        k:int=3
+    )->dict:
+        return self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=k
+        )
+
+    def reset(self)->int:
+        self.client.delete_collection(self.collection.name)
+        self.collection = self.client.get_or_create_collection(
+            self.collection.name
+        )
+
+    def count(self)-> int:
+        return self.collection.count()
+        
