@@ -19,8 +19,9 @@ class LongTermMemory:
         self.vectorstore.add_documents(
             chunks=[summary],
             embedding=embedding,
-            metadata=[metadata or {}]
+            metadata=[metadata or {"type":"memory"}]
         )
+
     def search_memory(
             self,
             query:str,
@@ -29,5 +30,16 @@ class LongTermMemory:
         embedding = self.embedder.embed_query(query)
         return self.vectorstore.similarity_search(
             query_embedding= embedding,
+            k=k,
+        )
+
+    def retrieve_memories(
+            self,
+            query:str,
+            k:int = 3,
+    ):
+        query_embedding = self.embedder.embed_query(query)
+        return self.vectorstore.similarity_search(
+            query_embedding=query_embedding,
             k=k,
         )

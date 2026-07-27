@@ -19,3 +19,17 @@ def test_search_memory():
         "Python"
     )
     assert isinstance(result, dict)
+
+def test_retrieve_memory():
+
+    memory = LongTermMemory()
+
+    breakpoint()
+    memory.store_memory(
+        "The user is learning Python."
+    )
+    results = memory.retrieve_memories(
+        "Python"
+    )
+
+    assert len(results["documents"]) > 0
