@@ -1,11 +1,33 @@
-from __future__ import annotations
-
 from app.rag.embedder import Embedder
-
+from app.rag.vectorstore import VectorStore
 
 class LongTermMemory:
-    def __init__(self) -> None:
+    def __init__(self):
         self.embedder = Embedder()
+        self.vectorstore = VectorStore(
+            collection_name="memory"
+        )
 
-    def remember(self, text: str) -> list[float]:
-        return self.embedder.embed(text)
+    def store_memory(
+            self,
+            summary:str,
+            metadata:dict | None = None
+    )-> None:
+        embedding = self.embedder.embed_documents(
+            [summary]
+        )
+        self.vectorstore.add_documents(
+            chunks=[summary],
+            embedding=embedding,
+            metadata=[metadata or {}]
+        )
+    def search_memory(
+            self,
+            query:str,
+            k:int = 3,
+    ):
+        embedding = self.embedder.embed_query(query)
+        return self.vectorstore.similarity_search(
+            query_embedding= embedding,
+            k=k,
+        )
