@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+import uuid
 
 import chromadb
 from chromadb.api.models.Collection import Collection
@@ -19,12 +20,16 @@ class VectorStore:
     def add_documents(
             self,
             chunks:list[str],
-            embedding:list[list[str]],
-            metadata:list[dict[str,any]] | None = None
+            embedding:list[list[float]],
+            metadata:list[dict[str,Any]] | None = None
     )->None:
         if metadata is None:
             metadata = [{} for _ in chunks]
-        ids = [f"chunks_{i}" for i in range(len(chunks))]
+
+        ids = [
+            f"{uuid.uuid4()}"
+            for _ in chunks
+            ]
         self.collection.add(
             ids = ids,
             documents=chunks,

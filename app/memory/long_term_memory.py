@@ -19,7 +19,7 @@ class LongTermMemory:
         self.vectorstore.add_documents(
             chunks=[summary],
             embedding=embedding,
-            metadata=[metadata or {"type":"memory"}]
+            metadata=[metadata or {"type":"unknown"}]
         )
 
     def search_memory(
