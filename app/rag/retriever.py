@@ -16,7 +16,7 @@ class Retriever:
     def retrieve(
             self,
             query: str,
-            k: int = 5,
+            k: int = 2, 
     ) -> list[dict]:
         """
         Retrieve top-k similar chunks.
