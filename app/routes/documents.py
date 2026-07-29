@@ -1,10 +1,10 @@
 from pathlib import Path
 import shutil
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from app.db.database import SessionLocal
+from app.db.database import SessionLocal, get_db
 from app.db.models import Document
 
 from app.ingestion.parsers import extract_pdf_text
@@ -23,7 +23,10 @@ UPLOAD_DIR = Path(Settings.upload_dir)
 UPLOAD_DIR.mkdir(parents=True, exist_ok = True)
 
 @router.post("/upload")
-async def upload_document(file:UploadFile = File(...)):
+async def upload_document(
+    file:UploadFile = File(...),
+    db:Session = Depends(get_db)
+    ):
 
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
@@ -66,21 +69,18 @@ async def upload_document(file:UploadFile = File(...)):
             metadata=metadata,
         )
 
-        db: Session = SessionLocal()
-        try:
-            document = Document(
-                filename=file.filename,
-                filepath = str(file_path)
-            )
-            db.add(document)
-            db.commit()
-            db.refresh(document)
-        finally:
-            db.close()
-
+        document = Document(
+            filename=file.filename,
+            filepath = str(file_path)
+        )
+        db.add(document)
+        db.commit()
+        db.refresh(document)
+        
         return {
-            "message":"Document upload successfully",
-            "document_id":document.filename,
+            "message":"Document uploaded successfully",
+            "document_id":document.id,
+            "filename": document.filename,
             "chunks":len(chunks),
         }
     
@@ -89,3 +89,23 @@ async def upload_document(file:UploadFile = File(...)):
             status_code=500,
             detail = str(e),
         )
+
+@router.get("/")
+def get_documents(
+    db:Session = Depends(get_db)
+):
+    document = (
+        db.query(Document)
+        .order_by(Document.uploaded_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id":doc.id,
+            "filename":doc.filename,
+            "filepath":doc.filepath,
+            "uploaded_at":doc.uploaded_at,
+        }
+        for doc in document
+    ]
