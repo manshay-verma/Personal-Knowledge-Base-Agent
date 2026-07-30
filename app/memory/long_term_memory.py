@@ -13,13 +13,15 @@ class LongTermMemory:
             summary:str,
             metadata:dict | None = None
     )-> None:
-        embedding = self.embedder.embed_documents(
-            [summary]
-        )
+        embedding = self.embedder.embed_documents([summary])
+        meta = dict(metadata) if metadata else {}
+        meta.setdefault("source", "conversation_memory")
+        meta.setdefault("type","memory")
+
         self.vectorstore.add_documents(
             chunks=[summary],
             embedding=embedding,
-            metadata=[metadata or {"type":"unknown"}]
+            metadata=[meta],
         )
 
     def search_memory(
