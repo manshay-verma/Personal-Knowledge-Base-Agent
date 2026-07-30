@@ -1,9 +1,9 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # 1 token = 4 char
-
+TOKEN_TO_CHAR = 4
 TARGET_TOKEN = 400
-CHUNK_SIZE = TARGET_TOKEN *400 # ~1600 CHAR
+CHUNK_SIZE = TARGET_TOKEN * TOKEN_TO_CHAR # ~1600 CHAR
 CHUNK_OVERLAP = 60*4           # ~240 char ~ 60 tokens
 
 text_splitter = RecursiveCharacterTextSplitter(

@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Any
-import uuid
+import hashlib
 
 import chromadb
 from chromadb.api.models.Collection import Collection
@@ -27,9 +27,12 @@ class VectorStore:
             metadata = [{} for _ in chunks]
 
         ids = [
-            f"{uuid.uuid4()}"
-            for _ in chunks
-            ]
+            hashlib.md5(
+                f"{metadata[i]['source']}_{i}_{chunk}".encode()
+            ).hexdigest()
+            for i, chunk in enumerate(chunks)
+        ]
+
         self.collection.add(
             ids = ids,
             documents=chunks,
